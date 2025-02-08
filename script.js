@@ -3,7 +3,7 @@ const visualizerCanvas = document.getElementById('visualizer');
 const canvasContext = visualizerCanvas.getContext('2d');
 
 let visualizationMode = "bars";
-let audioContext, analyser, dataArray, animationId, visualizerColor = "#ff0000";
+let audioContext, analyser, dataArray, animationId;
 
 function resizeCanvas() {
   visualizerCanvas.width = visualizerCanvas.offsetWidth;
@@ -42,7 +42,7 @@ function draw() {
 
     for (let i = 0; i < dataArray.length; i++) {
       barHeight = dataArray[i];
-      canvasContext.fillStyle = visualizerColor;
+      canvasContext.fillStyle = `rgb(${barHeight + 50}, 50, 200)`;
       canvasContext.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight);
       x += barWidth + 1;
     }
@@ -59,10 +59,49 @@ function draw() {
       x += sliceWidth;
     }
 
-    canvasContext.strokeStyle = visualizerColor;
+    canvasContext.strokeStyle = "rgb(0, 255, 0)";
     canvasContext.lineWidth = 2;
     canvasContext.stroke();
+  } else if (visualizationMode === "ocean") {
+    drawPixelOcean();
   }
+}
+
+function drawPixelOcean() {
+  animationId = requestAnimationFrame(drawPixelOcean);
+  canvasContext.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+
+  analyser.getByteFrequencyData(dataArray);
+
+  let pixelSize = 10;
+  let cols = Math.floor(visualizerCanvas.width / pixelSize);
+  let rows = Math.floor(visualizerCanvas.height / pixelSize);
+  let boatX = visualizerCanvas.width / 2;
+  let boatY = visualizerCanvas.height / 2;
+
+  for (let i = 0; i < cols; i++) {
+    let barHeight = dataArray[i % dataArray.length] / 3;
+    let waveHeight = Math.sin(i / 5) * barHeight + 50;
+
+    for (let j = 0; j < rows; j++) {
+      let colorIntensity = Math.max(0, 255 - j * 5 - waveHeight);
+      canvasContext.fillStyle = `rgb(0, 0, ${colorIntensity})`;
+      canvasContext.fillRect(i * pixelSize, j * pixelSize, pixelSize, pixelSize);
+    }
+
+    if (i === Math.floor(cols / 2)) {
+      boatY = visualizerCanvas.height - waveHeight - pixelSize * 2;
+    }
+  }
+
+  drawBoat(boatX, boatY);
+}
+
+function drawBoat(x, y) {
+  canvasContext.fillStyle = "brown";
+  canvasContext.fillRect(x - 10, y, 20, 10);
+  canvasContext.fillStyle = "white";
+  canvasContext.fillRect(x - 5, y - 10, 10, 10);
 }
 
 function drawCircular() {
@@ -82,7 +121,7 @@ function drawCircular() {
     let x2 = centerX + Math.cos(angle) * (radius + barHeight);
     let y2 = centerY + Math.sin(angle) * (radius + barHeight);
 
-    canvasContext.strokeStyle = visualizerColor;
+    canvasContext.strokeStyle = "rgb(255, 255, 0)";
     canvasContext.lineWidth = 2;
     canvasContext.beginPath();
     canvasContext.moveTo(x1, y1);
@@ -90,43 +129,6 @@ function drawCircular() {
     canvasContext.stroke();
   }
 }
-
-let scene, camera, renderer, bars = [];
-function init3D() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  camera.position.z = 50;
-  for (let i = 0; i < dataArray.length; i++) {
-    let geometry = new THREE.BoxGeometry(1, 1, 1);
-    let material = new THREE.MeshBasicMaterial({ color: 0x44aa88 });
-    let bar = new THREE.Mesh(geometry, material);
-    bar.position.x = i - dataArray.length / 2;
-    scene.add(bar);
-    bars.push(bar);
-  }
-}
-
-function animate3D() {
-  requestAnimationFrame(animate3D);
-  analyser.getByteFrequencyData(dataArray);
-  for (let i = 0; i < dataArray.length; i++) {
-    bars[i].scale.y = dataArray[i] / 10;
-  }
-  renderer.render(scene, camera);
-}
-
-document.getElementById("fftSize").addEventListener("change", (event) => {
-  analyser.fftSize = parseInt(event.target.value);
-  dataArray = new Uint8Array(analyser.frequencyBinCount);
-});
-
-document.getElementById("colorPicker").addEventListener("input", (event) => {
-  visualizerColor = event.target.value;
-});
 
 startButton.addEventListener('click', () => {
   if (!audioContext || audioContext.state === 'suspended') {
