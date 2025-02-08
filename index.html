@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Audio Visualizer</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <h1>Real-time Audio Visualization</h1>
+  <div id="controls">
+    <button id="startButton">Start</button>
+    <button onclick="visualizationMode = 'bars'">Bars</button>
+    <button onclick="visualizationMode = 'waveform'">Waveform</button>
+    <button onclick="drawCircular();">Circular</button>
+    <button onclick="init3D(); animate3D();">Start 3D</button>
+
+    <label for="fftSize">FFT Size:</label>
+    <select id="fftSize">
+      <option value="512">512</option>
+      <option value="1024" selected>1024</option>
+      <option value="2048">2048</option>
+    </select>
+
+    <label for="colorPicker">Color:</label>
+    <input type="color" id="colorPicker" value="#ff0000">
+  </div>
+  <canvas id="visualizer"></canvas>
+  <script src="script.js"></script>
+</body>
+</html>
